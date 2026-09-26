@@ -7,7 +7,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-title" content="Kcal Tracker" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <title>Kcal Tracker</title>
+  <title>Bierra moretti</title>
   <link rel="manifest" href="manifest.json" />
   <link rel="icon" href="icon.svg" type="image/svg+xml" />
   <link rel="apple-touch-icon" href="icon.svg" />
@@ -17,8 +17,8 @@
   <main class="app">
     <header class="app-header">
       <div>
-        <p class="eyebrow">Persoonlijke tracker</p>
-        <h1>Kcal Tracker</h1>
+        <p class="eyebrow">Joehoe</p>
+        <h1>Ultieme calorieen calculator</h1>
       </div>
       <button id="clearAllBtn" class="danger-button" type="button">Alles wissen</button>
     </header>
@@ -74,7 +74,7 @@
 
     <section class="summary-grid">
       <article class="card stat-card">
-        <span>Gekozen dag</span>
+        <span>dag</span>
         <strong id="selectedDateText">-</strong>
       </article>
 
@@ -84,12 +84,12 @@
       </article>
 
       <article class="card stat-card">
-        <span>Aantal items</span>
+        <span>Aantal maaltijden of snackies</span>
         <strong id="itemCount">0</strong>
       </article>
 
       <article class="card stat-card">
-        <span>Dag duurt nog</span>
+        <span>Resterend</span>
         <strong id="dayCountdown">--:--:--</strong>
       </article>
     </section>
@@ -97,37 +97,37 @@
     <section class="card chart-card">
       <div class="section-header chart-header">
         <div>
-          <p class="eyebrow">Periode-overzicht</p>
+          <p class="eyebrow">Overzicht (mooi)</p>
           <h2>Kcal per dag</h2>
         </div>
-        <p class="chart-note">Rood = onder 2500 kcal · groen = 2500 kcal of meer</p>
+        <p class="chart-note"></p>
       </div>
       <div class="chart-wrap">
         <canvas id="periodChart" aria-label="Grafiek met totaal aantal kcal per dag" role="img"></canvas>
       </div>
-      <p id="periodChartEmptyState" class="empty-state">Voeg maaltijden toe om de periodegrafiek te vullen.</p>
+      <p id="periodChartEmptyState" class="empty-state">Voeg chaps toe om de grafiek te vullen.</p>
     </section>
 
     <section class="card chart-card">
       <div class="section-header chart-header">
         <div>
           <p class="eyebrow">Dagverloop</p>
-          <h2>Cumulatieve kcal gekozen dag</h2>
+          <h2>kcal per tijd</h2>
         </div>
-        <p class="chart-note">Groen = op of boven lineair schema · rood = onder schema</p>
+        <p class="chart-note"></p>
       </div>
       <div class="chart-wrap">
         <canvas id="dayProgressChart" aria-label="Grafiek met cumulatieve kcal gedurende de gekozen dag" role="img"></canvas>
       </div>
-      <p id="dayProgressEmptyState" class="empty-state">Voeg maaltijden met tijd toe om het dagverloop te tonen.</p>
+      <p id="dayProgressEmptyState" class="empty-state">Voeg chaps met tijd toe om het dagverloop te tonen.</p>
     </section>
 
     <section class="card">
       <div class="section-header">
-        <h2>Maaltijden op deze dag</h2>
+        <h2>Chaps vandaag</h2>
       </div>
       <ul id="mealList" class="meal-list"></ul>
-      <p id="emptyState" class="empty-state">Nog geen maaltijden toegevoegd voor deze datum.</p>
+      <p id="emptyState" class="empty-state">Nog geen chaps toegevoegd voor deze datum.</p>
     </section>
   </main>
 
