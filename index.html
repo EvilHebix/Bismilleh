@@ -28,32 +28,22 @@
       <form id="mealForm" class="meal-form">
         <label>
           Datum
-          <input id="dateInput" type="date" required />
+          <input id="dateInput" type="text" autocomplete="off" aria-label="Datum in formaat DD-MM-YYYY" />
         </label>
 
         <label>
           Tijd
-          <input id="timeInput" type="time" required />
+          <input id="timeInput" type="text" autocomplete="off" aria-label="Tijd in formaat HH:MM" />
         </label>
 
         <label>
           Omschrijving
-          <input id="nameInput" type="text" placeholder="Bijv. ontbijt, pasta, shake" required />
+          <input id="nameInput" type="text" autocomplete="off" aria-label="Omschrijving maaltijd" />
         </label>
 
         <label>
           Kcal
-          <input id="kcalInput" type="number" min="0" step="1" placeholder="Bijv. 650" required />
-        </label>
-
-        <label>
-          Vet gram
-          <input id="fatInput" type="number" min="0" step="0.1" placeholder="Bijv. 18" />
-        </label>
-
-        <label>
-          Eiwit gram
-          <input id="proteinInput" type="number" min="0" step="0.1" placeholder="Bijv. 35" />
+          <input id="kcalInput" type="number" min="0" step="1" required />
         </label>
 
         <button type="submit">Toevoegen</button>
@@ -99,16 +89,6 @@
       </article>
 
       <article class="card stat-card">
-        <span>Vet vandaag</span>
-        <strong><span id="dailyFatTotal">0</span> g</strong>
-      </article>
-
-      <article class="card stat-card">
-        <span>Eiwit vandaag</span>
-        <strong><span id="dailyProteinTotal">0</span> g</strong>
-      </article>
-
-      <article class="card stat-card">
         <span>Dag duurt nog</span>
         <strong id="dayCountdown">--:--:--</strong>
       </article>
@@ -132,7 +112,7 @@
       <div class="section-header chart-header">
         <div>
           <p class="eyebrow">Dagverloop</p>
-          <h2>Cumulatieve kcal vandaag</h2>
+          <h2>Cumulatieve kcal gekozen dag</h2>
         </div>
         <p class="chart-note">Groen = op of boven lineair schema · rood = onder schema</p>
       </div>

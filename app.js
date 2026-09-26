@@ -8,13 +8,9 @@ const dateInput = document.querySelector("#dateInput");
 const timeInput = document.querySelector("#timeInput");
 const nameInput = document.querySelector("#nameInput");
 const kcalInput = document.querySelector("#kcalInput");
-const fatInput = document.querySelector("#fatInput");
-const proteinInput = document.querySelector("#proteinInput");
 const mealList = document.querySelector("#mealList");
 const emptyState = document.querySelector("#emptyState");
 const dailyTotal = document.querySelector("#dailyTotal");
-const dailyFatTotal = document.querySelector("#dailyFatTotal");
-const dailyProteinTotal = document.querySelector("#dailyProteinTotal");
 const itemCount = document.querySelector("#itemCount");
 const selectedDateText = document.querySelector("#selectedDateText");
 const clearAllBtn = document.querySelector("#clearAllBtn");
@@ -29,8 +25,6 @@ const dayProgressChart = document.querySelector("#dayProgressChart");
 const dayProgressEmptyState = document.querySelector("#dayProgressEmptyState");
 
 let meals = loadMeals();
-let dateManuallyChanged = false;
-let timeManuallyChanged = false;
 
 function getToday() {
   const now = new Date();
@@ -74,6 +68,54 @@ function saveMeals() {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(meals));
 }
 
+function formatIsoDateToInput(dateString) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(dateString)) {
+    return "";
+  }
+
+  const [year, month, day] = dateString.split("-");
+  return `${day}-${month}-${year}`;
+}
+
+function parseDateInput(value) {
+  const trimmedValue = value.trim();
+
+  if (!trimmedValue) {
+    return getToday();
+  }
+
+  let day;
+  let month;
+  let year;
+
+  const dutchMatch = trimmedValue.match(/^(\d{1,2})-(\d{1,2})-(\d{4})$/);
+  const isoMatch = trimmedValue.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+
+  if (dutchMatch) {
+    [, day, month, year] = dutchMatch;
+  } else if (isoMatch) {
+    [, year, month, day] = isoMatch;
+  } else {
+    return null;
+  }
+
+  const normalizedDay = String(Number(day)).padStart(2, "0");
+  const normalizedMonth = String(Number(month)).padStart(2, "0");
+  const isoDate = `${year}-${normalizedMonth}-${normalizedDay}`;
+  const parsedDate = new Date(`${isoDate}T00:00:00`);
+
+  const isValidDate = !Number.isNaN(parsedDate.getTime())
+    && parsedDate.getFullYear() === Number(year)
+    && parsedDate.getMonth() + 1 === Number(month)
+    && parsedDate.getDate() === Number(day);
+
+  return isValidDate ? isoDate : null;
+}
+
+function getSelectedDate() {
+  return parseDateInput(dateInput.value);
+}
+
 function formatDate(dateString) {
   return new Intl.DateTimeFormat("nl-NL", {
     weekday: "long",
@@ -90,9 +132,36 @@ function formatShortDate(dateString) {
   }).format(new Date(`${dateString}T00:00:00`));
 }
 
+function isValidTime(value) {
+  return /^([01]?\d|2[0-3]):[0-5]\d$/.test(value.trim());
+}
+
+function normalizeTime(value) {
+  const trimmedValue = value.trim();
+
+  if (!trimmedValue) {
+    return getCurrentTime();
+  }
+
+  const match = trimmedValue.match(/^(\d{1,2}):([0-5]\d)$/);
+
+  if (!match) {
+    return null;
+  }
+
+  const hours = Number(match[1]);
+  const minutes = Number(match[2]);
+
+  if (hours < 0 || hours > 23) {
+    return null;
+  }
+
+  return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}`;
+}
+
 function formatTimeForMeal(meal) {
   if (meal.time) {
-    return meal.time;
+    return normalizeTime(meal.time) || meal.time;
   }
 
   if (meal.createdAt) {
@@ -103,16 +172,6 @@ function formatTimeForMeal(meal) {
   }
 
   return "00:00";
-}
-
-function formatGrams(value) {
-  const number = Number(value) || 0;
-
-  if (Number.isInteger(number)) {
-    return number.toString();
-  }
-
-  return number.toFixed(1).replace(".", ",");
 }
 
 function timeToMinutes(timeString) {
@@ -137,8 +196,54 @@ function minutesToTimeLabel(totalMinutes) {
   return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}`;
 }
 
+function getDefaultMealName(timeString = getCurrentTime()) {
+  const minutes = timeToMinutes(timeString);
+
+  if (minutes >= 360 && minutes < 600) {
+    return "Ontbijt";
+  }
+
+  if (minutes >= 600 && minutes < 720) {
+    return "Brunch";
+  }
+
+  if (minutes >= 720 && minutes < 900) {
+    return "Lunch";
+  }
+
+  if (minutes >= 900 && minutes < 1050) {
+    return "Pre-avondeten snack";
+  }
+
+  if (minutes >= 1050 && minutes < 1290) {
+    return "Avondeten";
+  }
+
+  return "Late-night snacks";
+}
+
+function getSelectedTimeForDefaults() {
+  return normalizeTime(timeInput.value) || getCurrentTime();
+}
+
+function updateInputPlaceholders() {
+  dateInput.placeholder = formatIsoDateToInput(getToday());
+  timeInput.placeholder = getCurrentTime();
+  nameInput.placeholder = getDefaultMealName(getSelectedTimeForDefaults());
+
+  const selectedDate = getSelectedDate();
+  dateInput.classList.toggle("input-error", dateInput.value.trim() !== "" && !selectedDate);
+  timeInput.classList.toggle("input-error", timeInput.value.trim() !== "" && !normalizeTime(timeInput.value));
+}
+
 function getMealsForSelectedDate() {
-  return meals.filter((meal) => meal.date === dateInput.value);
+  const selectedDate = getSelectedDate();
+
+  if (!selectedDate) {
+    return [];
+  }
+
+  return meals.filter((meal) => meal.date === selectedDate);
 }
 
 function getDailyKcalTotals() {
@@ -155,22 +260,6 @@ function getDailyKcalTotals() {
 
   return Array.from(totalsByDate, ([date, total]) => ({ date, total }))
     .sort((a, b) => a.date.localeCompare(b.date));
-}
-
-function updateDefaultDateAndTime() {
-  const previousDate = dateInput.value;
-
-  if (!dateManuallyChanged) {
-    dateInput.value = getToday();
-  }
-
-  if (!timeManuallyChanged) {
-    timeInput.value = getCurrentTime();
-  }
-
-  if (previousDate !== dateInput.value) {
-    render();
-  }
 }
 
 function updateProgress(totalKcal) {
@@ -527,7 +616,8 @@ function getDayProgressData(selectedMeals, endMinutes = MINUTES_IN_DAY) {
 }
 
 function getDayProgressEndMinutes() {
-  return dateInput.value === getToday() ? getCurrentMinutes() : MINUTES_IN_DAY;
+  const selectedDate = getSelectedDate();
+  return selectedDate === getToday() ? getCurrentMinutes() : MINUTES_IN_DAY;
 }
 
 function renderDayProgressChart(selectedMeals) {
@@ -536,7 +626,8 @@ function renderDayProgressChart(selectedMeals) {
   }
 
   const endMinutes = getDayProgressEndMinutes();
-  const data = getDayProgressData(selectedMeals, endMinutes);
+  const safeEndMinutes = Math.max(endMinutes, 1);
+  const data = getDayProgressData(selectedMeals, safeEndMinutes);
   const { ctx, width, height } = resizeCanvasToDisplaySize(dayProgressChart);
   ctx.clearRect(0, 0, width, height);
 
@@ -552,14 +643,15 @@ function renderDayProgressChart(selectedMeals) {
     bottom: 54,
     left: 58
   };
-  const yMax = getYAxisMax(data.map((point) => point.value));
+  const targetAtEnd = (safeEndMinutes / MINUTES_IN_DAY) * DAILY_KCAL_GOAL;
+  const yMax = getYAxisMax([...data.map((point) => point.value), targetAtEnd]);
   const { chartWidth, chartHeight, yForValue } = drawChartFrame(ctx, width, height, padding, yMax, {
     goalValue: DAILY_KCAL_GOAL,
     goalLineLabel: "2500 om 23:59",
     xLabel: "tijd"
   });
 
-  const xForMinutes = (minutes) => padding.left + (minutes / endMinutes) * chartWidth;
+  const xForMinutes = (minutes) => padding.left + (minutes / safeEndMinutes) * chartWidth;
   const targetForMinutes = (minutes) => (minutes / MINUTES_IN_DAY) * DAILY_KCAL_GOAL;
 
   ctx.save();
@@ -568,14 +660,14 @@ function renderDayProgressChart(selectedMeals) {
   ctx.setLineDash([7, 7]);
   ctx.beginPath();
   ctx.moveTo(xForMinutes(0), yForValue(0));
-  ctx.lineTo(xForMinutes(endMinutes), yForValue(targetForMinutes(endMinutes)));
+  ctx.lineTo(xForMinutes(safeEndMinutes), yForValue(targetForMinutes(safeEndMinutes)));
   ctx.stroke();
   ctx.setLineDash([]);
   ctx.fillStyle = "rgba(249, 250, 251, 0.7)";
   ctx.font = "12px -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif";
   ctx.textAlign = "right";
   ctx.textBaseline = "bottom";
-  ctx.fillText("lineair schema", width - padding.right - 4, yForValue(targetForMinutes(endMinutes)) - 6);
+  ctx.fillText("lineair schema", width - padding.right - 4, yForValue(targetForMinutes(safeEndMinutes)) - 6);
   ctx.restore();
 
   const chartPoints = data.map((point) => ({
@@ -608,7 +700,7 @@ function renderDayProgressChart(selectedMeals) {
 
   const tickCount = 4;
   for (let tickIndex = 0; tickIndex <= tickCount; tickIndex += 1) {
-    const minutes = (endMinutes / tickCount) * tickIndex;
+    const minutes = (safeEndMinutes / tickCount) * tickIndex;
     ctx.fillText(minutesToTimeLabel(minutes), xForMinutes(minutes), padding.top + chartHeight + 12);
   }
 
@@ -623,6 +715,9 @@ function renderDayProgressChart(selectedMeals) {
 }
 
 function renderMeals() {
+  updateInputPlaceholders();
+
+  const selectedDate = getSelectedDate();
   const selectedMeals = getMealsForSelectedDate().sort((a, b) => {
     return formatTimeForMeal(a).localeCompare(formatTimeForMeal(b));
   });
@@ -630,14 +725,10 @@ function renderMeals() {
   mealList.innerHTML = "";
 
   const totalKcal = selectedMeals.reduce((sum, meal) => sum + (Number(meal.kcal) || 0), 0);
-  const totalFat = selectedMeals.reduce((sum, meal) => sum + (Number(meal.fat) || 0), 0);
-  const totalProtein = selectedMeals.reduce((sum, meal) => sum + (Number(meal.protein) || 0), 0);
 
   dailyTotal.textContent = totalKcal.toString();
-  dailyFatTotal.textContent = formatGrams(totalFat);
-  dailyProteinTotal.textContent = formatGrams(totalProtein);
   itemCount.textContent = selectedMeals.length.toString();
-  selectedDateText.textContent = dateInput.value ? formatDate(dateInput.value) : "-";
+  selectedDateText.textContent = selectedDate ? formatDate(selectedDate) : "Ongeldige datum";
   emptyState.style.display = selectedMeals.length === 0 ? "block" : "none";
 
   selectedMeals.forEach((meal) => {
@@ -652,7 +743,7 @@ function renderMeals() {
 
     const mealMeta = document.createElement("div");
     mealMeta.className = "meal-meta";
-    mealMeta.textContent = `${formatTimeForMeal(meal)} · ${meal.kcal} kcal · vet ${formatGrams(meal.fat)} g · eiwit ${formatGrams(meal.protein)} g`;
+    mealMeta.textContent = `${formatTimeForMeal(meal)} · ${meal.kcal} kcal`;
 
     mealInfo.append(mealName, mealMeta);
 
@@ -682,45 +773,52 @@ function render() {
 mealForm.addEventListener("submit", (event) => {
   event.preventDefault();
 
-  const meal = {
-    id: crypto.randomUUID ? crypto.randomUUID() : String(Date.now()),
-    date: dateInput.value,
-    time: timeInput.value || getCurrentTime(),
-    name: nameInput.value.trim(),
-    kcal: Number(kcalInput.value),
-    fat: Number(fatInput.value) || 0,
-    protein: Number(proteinInput.value) || 0,
-    createdAt: new Date().toISOString()
-  };
+  const selectedDate = getSelectedDate();
+  const selectedTime = normalizeTime(timeInput.value);
+  const kcal = Number(kcalInput.value);
 
-  if (!meal.date || !meal.name || !Number.isFinite(meal.kcal)) {
+  if (!selectedDate) {
+    alert("Vul de datum in als DD-MM-YYYY, bijvoorbeeld 26-09-2026.");
+    dateInput.focus();
     return;
   }
+
+  if (!selectedTime) {
+    alert("Vul de tijd in als HH:MM, bijvoorbeeld 08:30.");
+    timeInput.focus();
+    return;
+  }
+
+  if (!Number.isFinite(kcal) || kcal < 0) {
+    kcalInput.focus();
+    return;
+  }
+
+  const mealName = nameInput.value.trim() || getDefaultMealName(selectedTime);
+  const meal = {
+    id: crypto.randomUUID ? crypto.randomUUID() : String(Date.now()),
+    date: selectedDate,
+    time: selectedTime,
+    name: mealName,
+    kcal,
+    createdAt: new Date().toISOString()
+  };
 
   meals.push(meal);
   saveMeals();
 
   nameInput.value = "";
   kcalInput.value = "";
-  fatInput.value = "";
-  proteinInput.value = "";
-
-  if (!timeManuallyChanged) {
-    timeInput.value = getCurrentTime();
-  }
-
   nameInput.focus();
   render();
 });
 
-dateInput.addEventListener("change", () => {
-  dateManuallyChanged = true;
-  render();
+dateInput.addEventListener("input", render);
+timeInput.addEventListener("input", () => {
+  updateInputPlaceholders();
+  renderDayProgressChart(getMealsForSelectedDate());
 });
-
-timeInput.addEventListener("change", () => {
-  timeManuallyChanged = true;
-});
+nameInput.addEventListener("input", updateInputPlaceholders);
 
 clearAllBtn.addEventListener("click", () => {
   const confirmed = confirm("Weet je zeker dat je alle maaltijden wilt wissen?");
@@ -739,10 +837,12 @@ window.addEventListener("resize", () => {
   renderDayProgressChart(getMealsForSelectedDate());
 });
 
-updateDefaultDateAndTime();
+updateInputPlaceholders();
 updateCountdown();
 render();
 
+setInterval(() => {
+  updateInputPlaceholders();
+  renderDayProgressChart(getMealsForSelectedDate());
+}, 60_000);
 setInterval(updateCountdown, 1000);
-setInterval(() => renderDayProgressChart(getMealsForSelectedDate()), 60_000);
-setInterval(updateDefaultDateAndTime, 30_000);
