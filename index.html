@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#22c55e" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-title" content="Kcal Tracker" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <title>Kcal Tracker</title>
+  <link rel="manifest" href="manifest.json" />
+  <link rel="icon" href="icon.svg" type="image/svg+xml" />
+  <link rel="apple-touch-icon" href="icon.svg" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <main class="app">
+    <header class="app-header">
+      <div>
+        <p class="eyebrow">Persoonlijke tracker</p>
+        <h1>Kcal Tracker</h1>
+      </div>
+      <button id="clearAllBtn" class="danger-button" type="button">Alles wissen</button>
+    </header>
+
+    <section class="card">
+      <h2>Maaltijd toevoegen</h2>
+      <form id="mealForm" class="meal-form">
+        <label>
+          Datum
+          <input id="dateInput" type="date" required />
+        </label>
+
+        <label>
+          Tijd
+          <input id="timeInput" type="time" required />
+        </label>
+
+        <label>
+          Omschrijving
+          <input id="nameInput" type="text" placeholder="Bijv. ontbijt, pasta, shake" required />
+        </label>
+
+        <label>
+          Kcal
+          <input id="kcalInput" type="number" min="0" step="1" placeholder="Bijv. 650" required />
+        </label>
+
+        <label>
+          Vet gram
+          <input id="fatInput" type="number" min="0" step="0.1" placeholder="Bijv. 18" />
+        </label>
+
+        <label>
+          Eiwit gram
+          <input id="proteinInput" type="number" min="0" step="0.1" placeholder="Bijv. 35" />
+        </label>
+
+        <button type="submit">Toevoegen</button>
+      </form>
+    </section>
+
+    <section class="card progress-card">
+      <div class="progress-copy">
+        <p class="eyebrow">Dagdoel</p>
+        <h2>2500 kcal per dag</h2>
+        <p class="remaining-text">
+          Nog te gaan: <strong><span id="remainingKcal">2500</span> kcal</strong>
+        </p>
+        <p id="goalStatus" class="goal-status">0% van je dagdoel gehaald.</p>
+      </div>
+
+      <div class="semi-ring-wrap" aria-label="Percentage van dagdoel gehaald">
+        <svg class="semi-ring" viewBox="0 0 200 120" role="img">
+          <path class="semi-ring-bg" d="M 15 105 A 85 85 0 0 1 185 105" />
+          <path id="progressRing" class="semi-ring-progress" d="M 15 105 A 85 85 0 0 1 185 105" />
+        </svg>
+        <div class="ring-label">
+          <strong id="progressPercent">0%</strong>
+          <span>gevuld</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="summary-grid">
+      <article class="card stat-card">
+        <span>Gekozen dag</span>
+        <strong id="selectedDateText">-</strong>
+      </article>
+
+      <article class="card stat-card">
+        <span>Totaal kcal</span>
+        <strong><span id="dailyTotal">0</span> kcal</strong>
+      </article>
+
+      <article class="card stat-card">
+        <span>Aantal items</span>
+        <strong id="itemCount">0</strong>
+      </article>
+
+      <article class="card stat-card">
+        <span>Vet vandaag</span>
+        <strong><span id="dailyFatTotal">0</span> g</strong>
+      </article>
+
+      <article class="card stat-card">
+        <span>Eiwit vandaag</span>
+        <strong><span id="dailyProteinTotal">0</span> g</strong>
+      </article>
+
+      <article class="card stat-card">
+        <span>Dag duurt nog</span>
+        <strong id="dayCountdown">--:--:--</strong>
+      </article>
+    </section>
+
+    <section class="card chart-card">
+      <div class="section-header chart-header">
+        <div>
+          <p class="eyebrow">Periode-overzicht</p>
+          <h2>Kcal per dag</h2>
+        </div>
+        <p class="chart-note">Rood = onder 2500 kcal · groen = 2500 kcal of meer</p>
+      </div>
+      <div class="chart-wrap">
+        <canvas id="periodChart" aria-label="Grafiek met totaal aantal kcal per dag" role="img"></canvas>
+      </div>
+      <p id="periodChartEmptyState" class="empty-state">Voeg maaltijden toe om de periodegrafiek te vullen.</p>
+    </section>
+
+    <section class="card chart-card">
+      <div class="section-header chart-header">
+        <div>
+          <p class="eyebrow">Dagverloop</p>
+          <h2>Cumulatieve kcal vandaag</h2>
+        </div>
+        <p class="chart-note">Groen = op of boven lineair schema · rood = onder schema</p>
+      </div>
+      <div class="chart-wrap">
+        <canvas id="dayProgressChart" aria-label="Grafiek met cumulatieve kcal gedurende de gekozen dag" role="img"></canvas>
+      </div>
+      <p id="dayProgressEmptyState" class="empty-state">Voeg maaltijden met tijd toe om het dagverloop te tonen.</p>
+    </section>
+
+    <section class="card">
+      <div class="section-header">
+        <h2>Maaltijden op deze dag</h2>
+      </div>
+      <ul id="mealList" class="meal-list"></ul>
+      <p id="emptyState" class="empty-state">Nog geen maaltijden toegevoegd voor deze datum.</p>
+    </section>
+  </main>
+
+  <script src="app.js"></script>
+  <script>
+    if ("serviceWorker" in navigator) {
+      window.addEventListener("load", () => {
+        navigator.serviceWorker.register("service-worker.js").catch((error) => {
+          console.error("Service worker registratie mislukt:", error);
+        });
+      });
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,19 @@
+{
+  "name": "Kcal Tracker",
+  "short_name": "Kcal",
+  "description": "Persoonlijke kcal-tracker met dagtotalen, macro's en periodegrafiek.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#0f172a",
+  "theme_color": "#22c55e",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "./icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
